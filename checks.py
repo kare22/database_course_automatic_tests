@@ -4,7 +4,7 @@ class Checker:
         self.schema = schema
         self.cur = cur
 
-    def _responseWrapper(self, result, attributes):
+    def _responseWrapper(self, result, points, attributes):
         response = ""
 
         if 'tableName' in attributes:
@@ -29,16 +29,16 @@ class Checker:
                 if result:
                     response += 'on eemaldatud'
                 else:
-                    response += 'eeldasin et ei ole kuid on olemas'
+                    response += 'eeldati et ei ole kuid on olemas'
             else:
                 if result:
                     response += 'on olemas'
                 else:
                     response += 'ei ole olemas'
 
-        return result, response
+        return result, response, points
 
-    def checkConstraint(self, tableName, constraintName, constraintType=None, shouldNotExist=False):
+    def checkConstraint(self, tableName, constraintName, constraintType=None, shouldNotExist=False, points=0):
         def check():
             try:
                 query = f"SELECT * FROM information_schema.table_constraints WHERE table_name = '{tableName}' AND table_schema = '{self.schema}' AND constraint_name = '{constraintName}'"
@@ -52,14 +52,14 @@ class Checker:
             except:
                 return False
 
-        return self._responseWrapper(check(), {
+        return self._responseWrapper(check(), points, {
             'tableName': tableName,
             'constraintName': constraintName,
             'constraintType': constraintType,
             'shouldExist': not shouldNotExist
         })
     
-    def checkDefault(self, tableName, columnName, expectedValue, shouldNotExist=False):
+    def checkDefault(self, tableName, columnName, expectedValue, points=0):
         def check():
             try:
                 query = f"SELECT * FROM information_schema.columns WHERE table_name  = '{tableName}' AND column_name = '{columnName}'"
@@ -71,11 +71,11 @@ class Checker:
 
                 self.cur.execute(query)
 
-                return len(self.cur.fetchall()) == (0 if expectedValue == None else 1)
+                return len(self.cur.fetchall()) == 1
             except:
                 return False
 
-        return self._responseWrapper(check(), {
+        return self._responseWrapper(check(), points, {
             'tableName': tableName,
             'expectedValue': expectedValue,
             'shouldExist': expectedValue != None,
@@ -83,7 +83,7 @@ class Checker:
             'funcName': 'checkDefault',
         })
     
-    def checkColumn(self, tableName, columnName, attributeName='*', expectedValue=None):
+    def checkColumn(self, tableName, columnName, attributeName='*', expectedValue=None, points=0):
         def check():
             try:
                 query = f"SELECT {attributeName} FROM information_schema.columns WHERE table_name = '{tableName}' AND column_name = '{columnName}'"
@@ -100,13 +100,13 @@ class Checker:
 
         result, receivedValue = check()
 
-        return self._responseWrapper(result, {
+        return self._responseWrapper(result, points, {
             'tableName': tableName,
             'columnName': columnName,
             'attributeName': attributeName,
             'expectedValue': expectedValue,
             'receivedValue': receivedValue,
-            'shouldExist': expectedValue is None
+            'shouldExist': expectedValue is None,
         })
 
 

@@ -70,21 +70,26 @@ def testStudent(testFileName):
         checker = Checker(os.getenv('DB_SCHEMA'), cur)
 
         tests = [
-            checker.checkColumn('turniirid', 'asukoht'),
-            checker.checkConstraint('partiid', 'vastavus'),
-            checker.checkConstraint('isikud', 'un_isikukood', 'UNIQUE'),
-            checker.checkConstraint('isikud', 'nimi_unique', 'UNIQUE'),
-            checker.checkColumn('klubid', 'asukoht', 'character_maximum_length', 100),
-            checker.checkDefault('klubid', 'asukoht', None),
+            checker.checkColumn('turniirid', 'asukoht', points=2),
+            checker.checkConstraint('partiid', 'vastavus', points=1),
+            checker.checkConstraint('isikud', 'un_isikukood', 'UNIQUE', points=0.5),
+            checker.checkConstraint('isikud', 'nimi_unique', 'UNIQUE', points=0.25),
+            checker.checkColumn('klubid', 'asukoht', 'character_maximum_length', 100, points=0.5),
+            checker.checkDefault('klubid', 'asukoht', None, points=1),
         ]
 
         with open('tulemused.csv', 'a', newline='', encoding='UTF8') as file:
             writer = csv.writer(file)
-            # writer.writerow(["SNo", "Name", "Subject"])
+
             writer.writerow([getNameFromPath(testFileName)])
+            result = 0
             for i, test in enumerate(tests):
                 #TODO add color to ÕIGE-VALE
-                writer.writerow(['', i+1, ('ÕIGE' if test[0] else 'VALE'), test[1]])
+                rowResult = (test[2] if test[0] else 0)
+                writer.writerow(['', i+1, ('ÕIGE' if test[0] else 'VALE'), test[1], rowResult])
+                result += rowResult
+
+            writer.writerow(['', '', '', '', result])
 
 
     #TODO cur.execute(f"DROP DATABASE {id}")
@@ -93,7 +98,7 @@ def testStudent(testFileName):
 #TODO change w -> a
 with open('tulemused.csv', 'w', newline='', encoding='UTF8') as file:
     writer = csv.writer(file)
-    writer.writerow(['', '', '', '',])
+    writer.writerow(['', '', '', '', ''])
     writer.writerow(['Praktikum3', datetime.today().strftime('%Y-%m-%d %H:%M:%S')])
 
 # Get the current directory

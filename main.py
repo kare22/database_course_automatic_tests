@@ -73,7 +73,7 @@ def testStudent(testFileName):
             checker.checkColumn('turniirid', 'asukoht', points=2),
             checker.checkConstraint('partiid', 'vastavus', points=1),
             checker.checkConstraint('isikud', 'un_isikukood', 'UNIQUE', points=0.5),
-            checker.checkConstraint('isikud', 'nimi_unique', 'UNIQUE', points=0.25),
+            checker.checkConstraint('isikud', 'nimi_unique', 'UNIQUE', shouldNotExist=True, points=0.25),
             checker.checkColumn('klubid', 'asukoht', 'character_maximum_length', 100, points=0.5),
             checker.checkDefault('klubid', 'asukoht', None, points=1),
         ]

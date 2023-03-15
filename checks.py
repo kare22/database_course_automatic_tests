@@ -48,7 +48,7 @@ class Checker:
 
                 self.cur.execute(query)
 
-                return len(self.cur.fetchall()) == 1
+                return len(self.cur.fetchall()) == (0 if shouldNotExist else 1)
             except:
                 return False
 

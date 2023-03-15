@@ -1,5 +1,6 @@
 import csv
 import os
+import subprocess
 
 import psycopg2
 from uuid import uuid4
@@ -114,6 +115,7 @@ while True:
     if answer == '?':
         print('3 --> Praks3')
     elif answer == '3':
+        subprocess.call(['sh', './convert.sh', 'praks3'])
         run('praks3', 'praks3', [
             getCheckColumnQuery('turniirid', 'asukoht', points=2),
             getCheckConstraintQuery('partiid', 'vastavus', schema=os.getenv('DB_SCHEMA'), points=1),

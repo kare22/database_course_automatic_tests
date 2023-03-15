@@ -42,7 +42,7 @@ def connect(dbName=os.getenv('DB_NAME'), autoCommit=False):
 
     return connection
 
-def testStudent(testFileName, tests):
+def testStudent(testFileName, name, tests):
     id = f"temp_{str(uuid4()).replace('-', '_')}"
 
     # Create substitute database for testing
@@ -69,7 +69,7 @@ def testStudent(testFileName, tests):
     with connection.cursor() as cur:
         checker = Checker(os.getenv('DB_SCHEMA'), cur)
 
-        with open('tulemused.csv', 'a', newline='', encoding='UTF8') as file:
+        with open(f"tulemused_{name}.csv", 'a', newline='', encoding='UTF8') as file:
             writer = csv.writer(file)
 
             writer.writerow([getNameFromPath(testFileName)])
@@ -90,9 +90,9 @@ def testStudent(testFileName, tests):
 
 
 
-def run(name, tests):
+def run(name, path, tests):
     # TODO change w -> a
-    with open('tulemused.csv', 'w', newline='', encoding='UTF8') as file:
+    with open(f"tulemused_{name}.csv", 'w', newline='', encoding='UTF8') as file:
         writer = csv.writer(file)
         writer.writerow(['', '', '', '', ''])
         writer.writerow([name, datetime.today().strftime('%Y-%m-%d %H:%M:%S')])
@@ -101,18 +101,30 @@ def run(name, tests):
     directory = os.getcwd()
 
     # Loop through all files in the current directory that end with ".sql"
-    for filename in os.listdir(f"{directory}/praks3"):
+    for filename in os.listdir(f"{directory}/{path}"):
         if filename.endswith('.sql'):
-            if checkIfDumpUsesCopy(f"{directory}/praks3/{filename}"):
+            if checkIfDumpUsesCopy(f"{directory}/{path}/{filename}"):
                 print('Siin on COPY, väga halb: ' + filename)
             else:
-                testStudent(f"{directory}/praks3/{filename}", tests)
+                testStudent(f"{directory}/{path}/{filename}", name, tests)
 
-run('praks3', [
-    getCheckColumnQuery('turniirid', 'asukoht', points=2),
-    getCheckConstraintQuery('partiid', 'vastavus', schema=os.getenv('DB_SCHEMA'), points=1),
-    getCheckConstraintQuery('isikud', 'un_isikukood', 'UNIQUE', schema=os.getenv('DB_SCHEMA'), points=0.5),
-    getCheckConstraintQuery('isikud', 'nimi_unique', 'UNIQUE', shouldNotExist=True, schema=os.getenv('DB_SCHEMA'), points=0.25),
-    getCheckColumnQuery('klubid', 'asukoht', 'character_maximum_length', 100, points=0.5),
-    getCheckDefaultQuery('klubid', 'asukoht', None, points=1),
-])
+while True:
+    answer = input('Millist praksi soovid jooksutada?: ')
+
+    if answer == '?':
+        print('3 --> Praks3')
+    elif answer == '3':
+        run('praks3', 'praks3', [
+            getCheckColumnQuery('turniirid', 'asukoht', points=2),
+            getCheckConstraintQuery('partiid', 'vastavus', schema=os.getenv('DB_SCHEMA'), points=1),
+            getCheckConstraintQuery('isikud', 'un_isikukood', 'UNIQUE', schema=os.getenv('DB_SCHEMA'), points=0.5),
+            getCheckConstraintQuery('isikud', 'nimi_unique', 'UNIQUE', shouldNotExist=True, schema=os.getenv('DB_SCHEMA'), points=0.25),
+            getCheckColumnQuery('klubid', 'asukoht', 'character_maximum_length', 100, points=0.5),
+            getCheckDefaultQuery('klubid', 'asukoht', None, points=1),
+        ])
+
+        print('Töö tehtud!')
+        break
+    else:
+        print('Ebalubatud sisend, palun proovi uuesti!')
+

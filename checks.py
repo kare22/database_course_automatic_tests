@@ -107,10 +107,9 @@ class Checker:
     def checkConstraint(self, params):
         def check():
             try:
-                print(params['query'])
                 self.cur.execute(params['query'])
 
-                return len(self.cur.fetchall()) == (0 if params['shouldNotExist'] else 1)
+                return len(self.cur.fetchall()) == (0 if params.get('shouldNotExist', False) else 1)
             except:
                 return False
 
@@ -141,6 +140,8 @@ class Checker:
                 return False, 'VIGA'
 
         result, receivedValue = check()
+
+        params['receivedValue'] = receivedValue
 
         return _responseWrapper(result, params['points'], params)
 

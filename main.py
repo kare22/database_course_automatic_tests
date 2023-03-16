@@ -137,7 +137,7 @@ while True: #TODO Schema loading inside check
         print('Töö tehtud!')
         break
     elif answer == '4':
-        # subprocess.call(['sh', './convert.sh', 'praks4'])
+        subprocess.call(['sh', './convert.sh', 'praks4'])
         run('praks4', 'praks4', [
             titleLayer('Praktikum 4'),
             getCheckTableQuery('asulad'),

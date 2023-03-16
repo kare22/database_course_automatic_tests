@@ -119,11 +119,11 @@ def run(name, path, tests):
                 testStudent(f"{directory}/{path}/{filename}", name, tests)
 
 while True: #TODO Schema loading inside check
+    print('3 --> Praks3')
+    print('4 --> Praks4/Kodu3')
     answer = input('Millist praksi soovid jooksutada?: ')
 
-    if answer == '?':
-        print('3 --> Praks3')
-    elif answer == '3':
+    if answer == '3':
         subprocess.call(['sh', './convert.sh', 'praks3'])
         run('praks3', 'praks3', [
             getCheckColumnQuery('turniirid', 'asukoht', points=2),

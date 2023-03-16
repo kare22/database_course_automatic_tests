@@ -12,8 +12,8 @@ rm *.sql
 # Create temp folder
 mkdir temp
 
-# Find all files in the current directory that don't end with ".sh" or ".sql", and apply pg_restore to each file
-find . -maxdepth 1 -type f ! -name '*.sh' ! -name '*.sql' -exec sh -c 'pg_restore -f "temp/${1%.backup}.sql" "$1"' sh {} \;
+# Find all files in the current directory that don't end with ".md" or ".sh" or ".sql", and apply pg_restore to each file
+find . -maxdepth 1 -type f ! -name '*.sh' ! -name '*.md' ! -name '*.sql' -exec sh -c 'pg_restore -f "temp/${1%.backup}.sql" "$1"' sh {} \;
 
 cd temp
 

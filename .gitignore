@@ -2,5 +2,8 @@ stash
 
 .DS_STORE
 
-praks3
-praks4
+praks3/*.sql
+praks3/temp
+
+praks4/*.sql
+praks4/temp

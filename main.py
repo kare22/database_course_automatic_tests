@@ -92,7 +92,7 @@ def testStudent(testFileName, name, tests):
                 writer.writerow(['', i+1, ('ÕIGE' if testResult[0] else 'VALE'), testResult[1], rowResult])
                 result += rowResult
 
-            writer.writerow(['', '', result, '/', maxResult])
+            writer.writerow(['', '', '', '', f"{result}/{maxResult}"])
 
 
     #TODO cur.execute(f"DROP DATABASE {id}")

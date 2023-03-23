@@ -2,8 +2,19 @@ stash
 
 .DS_STORE
 
-praks3/*.sql
-praks3/temp
+praks3/*
+!praks3/readMe.md
 
-praks4/*.sql
-praks4/temp
+praks4/*
+!praks4/readMe.md
+
+kodu4/*
+!kodu4/readMe.md
+
+kodu5/*
+!kodu5/readMe.md
+
+kodu6/*
+!kodu6/readMe.md
+
+tulemused*.csv

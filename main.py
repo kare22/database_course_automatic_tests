@@ -1,4 +1,5 @@
 import csv
+import os
 import subprocess
 
 import psycopg2

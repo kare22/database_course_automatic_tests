@@ -195,8 +195,8 @@ while True: #TODO Schema loading inside check
             getCheckColumnQuery('v_keskminepartii', 'turniiri_nimi', points=1),
             getCheckColumnQuery('v_keskminepartii', 'keskmine_partii', points=1),
             getCheckDataQuery('v_keskminepartii', 'COUNT(*)', expectedValue=5, points=1),
-            getCheckDataQuery('v_keskminepartii', "EXTRACT ('epoch' FROM keskmine_partii)", where="turniiri_nimi = 'Plekkkarikas 2010'", expectedValue='1456.000000', points=1),
-            getCheckDataQuery('v_keskminepartii', "EXTRACT ('epoch' FROM keskmine_partii)", where="turniiri_nimi = 'Kolme klubi kohtumine'", expectedValue='1416.040000', points=1),
+            getCheckDataQuery('v_keskminepartii', 'ROUND(keskmine_partii, 3)', where="turniiri_nimi = 'Plekkkarikas 2010'", expectedValue='23.765', points=1),
+            getCheckDataQuery('v_keskminepartii', 'ROUND(keskmine_partii, 3)', where="turniiri_nimi = 'Kolme klubi kohtumine'", expectedValue='23.040', points=1),
 
             titleLayer('Materialseeritud vaade mv_vaate_kontroll'),
             #select * from pg_matviews where matviewname = 'mv_partiide_arv_valgetega'

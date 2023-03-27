@@ -1,8 +1,7 @@
-### STATIC METHODS ###
-import os
 import sys
-import traceback
 
+
+### STATIC METHODS ###
 
 def _responseWrapper(result, points, attributes):
     response = ""

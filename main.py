@@ -81,8 +81,10 @@ def testStudent(testFileName, name, tests):
             maxResult = 0
             index = 0
             for i, test in enumerate(tests):
-                if test.get('type', '') == 'title':
-                    writer.writerow(['', '', '', '', test['text']])
+                if test.get('type', '') == 'ignore':
+                    continue
+                elif test.get('type', '') == 'title':
+                    writer.writerow(['', '', '', test['text'], '',])
                     continue
                 index += 1
 
@@ -121,15 +123,16 @@ def run(name, path, tests):
                 testStudent(f"{directory}/{path}/{filename}", name, tests)
 
 while True: #TODO Schema loading inside check
-    print('3 --> Praks3')
-    print('4 --> Praks4/Kodu3')
+    print('p3 --> Praks3')
+    print('p4 --> Praks4/Kodu3')
     print('k4 --> Kodu4')
-    print('5 --> Kodu5')
-    print('6 --> Kodu6')
+    print('k5 --> Kodu5')
+    print('p7 --> Praks7')
+    print('k6 --> Kodu6')
 
     answer = input('Millist praksi soovid jooksutada?: ')
 
-    if answer == '3':
+    if answer == 'p3':
         subprocess.call(['sh', './convert.sh', 'praks3'])
         run('praks3', 'praks3', [
             getCheckColumnQuery('turniirid', 'asukoht', points=2),
@@ -139,7 +142,7 @@ while True: #TODO Schema loading inside check
             getCheckColumnQuery('klubid', 'asukoht', 'character_maximum_length', 100, points=0.5),
             getCheckDefaultQuery('klubid', 'asukoht', None, points=1),
         ])
-    elif answer == '4':
+    elif answer == 'p4':
         subprocess.call(['sh', './convert.sh', 'praks4'])
         run('praks4', 'praks4', [
             titleLayer('Praktikum 4'),
@@ -205,10 +208,100 @@ while True: #TODO Schema loading inside check
             getCheckDataQuery('mv_partiide_arv_valgetega', 'MIN(partiisid_valgetega)', expectedValue=0, points=1),
             getCheckDataQuery('mv_partiide_arv_valgetega', 'MAX(partiisid_valgetega)', expectedValue=14, points=1),
         ])
-    elif answer == '5':
+    elif answer == 'k5':
         print('Pole implementeeritud')
         continue
-    elif answer == '6':
+    elif answer == 'k6':
+        print('Pole implementeeritud')
+        continue
+    elif answer == 'p7':
+        name = 'praks7'
+        subprocess.call(['sh', './convert.sh', name])
+        run(name, name, [
+            titleLayer('Vaade v_partiid'),
+            getCheckColumnQuery('v_partiid', 'asula', points=1),
+            getCheckColumnQuery('v_partiid', 'turniir', points=1),
+            getCheckColumnQuery('v_partiid', 'algus', points=1),
+            getCheckColumnQuery('v_partiid', 'valge_nimi', points=1),
+            getCheckColumnQuery('v_partiid', 'valge_klubi', points=1),
+            getCheckColumnQuery('v_partiid', 'valge_punkt', points=1),
+            getCheckColumnQuery('v_partiid', 'must_nimi', points=1),
+            getCheckColumnQuery('v_partiid', 'must_klubi', points=1),
+            getCheckColumnQuery('v_partiid', 'must_punkt', points=1),
+            getCheckDataQuery('v_partiid', 'COUNT(*)', expectedValue=299, points=1),
+
+            titleLayer('Vaade v_partiidpisi'),
+            getCheckColumnQuery('v_partiidpidi', 'id', points=1),
+            getCheckColumnQuery('v_partiidpidi', 'valge_mangija', points=1),
+            getCheckColumnQuery('v_partiidpidi', 'valge_punkt', points=1),
+            getCheckColumnQuery('v_partiidpidi', 'must_mangija', points=1),
+            getCheckColumnQuery('v_partiidpidi', 'must_punkt', points=1),
+            getCheckDataQuery('v_partiidpidi', 'COUNT(*)', expectedValue=299, points=1),
+            getCheckDataQuery('valge_mangija', 'v_partiidpidi', where='id = 10', expectedValue='Anna Raha', points=1),
+            getCheckDataQuery('must_mangija', 'v_partiidpidi', where='id = 10', expectedValue='Aljona Aljas', points=1),
+            getCheckDataQuery('must_punkt', 'v_partiidpidi', where='id = 10', expectedValue=0, points=1),
+            getCheckDataQuery('v_partiidpidi', 'COUNT(*)', expectedValue=1, points=1),
+            getCheckColumnQuery('v_partiidpisi', 'must_punkt', 'data_type', 'numeric', points=1),
+            getCheckDataQuery('must_punkt', 'v_partiidpidi', where='id = 12', expectedValue=0.5, points=1),
+
+            titleLayer('Vaade v_punktid'),
+            getCheckColumnQuery('v_punktid', 'partii', points=1),
+            getCheckColumnQuery('v_punktid', 'turniir', points=1),
+            getCheckColumnQuery('v_punktid', 'mangija', points=1),
+            getCheckColumnQuery('v_punktid', 'varv', points=1),
+            getCheckColumnQuery('v_punktid', 'punkt', points=1),
+            getCheckDataQuery('v_punktid', 'COUNT(*)', expectedValue=598, points=1),
+            getCheckColumnQuery('v_punktid', 'partii', where="data_type LIKE 'int%'", points=1),
+            getCheckColumnQuery('v_punktid', 'punkt', 'data_type', 'numeric', points=1),
+            getCheckColumnQuery('v_punktid', 'varv', where="data_type LIKE 'varchar%' OR data_type LIKE 'text%'", points=1),
+            getCheckColumnQuery('v_punktid', 'mangija', where="data_type LIKE 'int%'", points=1),
+            getCheckDataQuery('v_punktid', 'COUNT(*)', where='partii = 299 AND mangija = 76', expectedValue=1, points=1),
+            getCheckDataQuery('v_punktid', 'UPPER(varv)', where='partii = 299 AND mangija = 76', expectedValue='V', points=1),
+            getCheckDataQuery('v_punktid', 'COUNT(*)', where='partii = 299 AND mangija = 85', expectedValue=1, points=1),
+            getCheckDataQuery('v_punktid', 'UPPER(varv)', where='partii = 299 AND mangija = 85', expectedValue='M', points=1),
+            getCheckDataQuery('v_punktid', 'COUNT(*)', where='partii = 299 AND mangija = 76', expectedValue=1, points=1),
+            getCheckDataQuery('v_punktid', 'punkt', where='partii = 299 AND mangija = 76', expectedValue=0.5, points=1),
+            getCheckDataQuery('v_punktid', 'COUNT(*)', where='partii = 11 AND mangija = 91', expectedValue=1, points=1),
+            getCheckDataQuery('v_punktid', 'punkt', where='partii = 11 AND mangija = 91', expectedValue=0, points=1),
+            getCheckDataQuery('v_punktid', 'COUNT(*)', where='partii = 1 AND mangija = 150', expectedValue=1, points=1),
+            getCheckDataQuery('v_punktid', 'punkt', where='partii = 1 AND mangija = 150', expectedValue=1, points=1),
+
+            titleLayer('Vaade v_edetabelid'),
+            getCheckColumnQuery('v_edetabelid', 'id', points=1),
+            getCheckColumnQuery('v_edetabelid', 'mangija', points=1),
+            getCheckColumnQuery('v_edetabelid', 'synniaeg', points=1),
+            getCheckColumnQuery('v_edetabelid', 'ranking', points=1),
+            getCheckColumnQuery('v_edetabelid', 'klubi', points=1),
+            getCheckColumnQuery('v_edetabelid', 'turniir', points=1),
+            getCheckColumnQuery('v_edetabelid', 'punkte', points=1),
+            getCheckDataQuery('v_edetabelid', 'COUNT(*)', expectedValue=184, points=1),
+
+            titleLayer('Vaade mv_edetabelid'),
+            getCheckDataQuery('pg_matviews', 'COUNT(*)', where="matviewname = 'mv_edetabelid'", expectedValue=1, points=1),
+            getExecuteQuery('REFRESH MATERIALIZED VIEW mv_edetabelid'),
+            getCheckDataQuery('mv_edetabelid', 'COUNT(*)', expectedValue=184, points=1),
+
+            titleLayer('Vaade v_klubi54'),
+            getCheckColumnQuery('v_klubi54', 'eesnimi', points=1),
+            getCheckColumnQuery('v_klubi54', 'perenimi', points=1),
+            getCheckColumnQuery('v_klubi54', 'synniaeg', points=1),
+            getCheckColumnQuery('v_klubi54', 'ranking', points=1),
+            getCheckColumnQuery('v_klubi54', 'klubi_id', points=1),
+            getCheckDataQuery('v_klubi54', 'COUNT(*)', expectedValue=5, points=1),
+            getCheckDataQuery('v_klubi54', 'klubi_id', where="eesnimi = 'Maria' AND perenimi = 'Lihtne'", expectedValue=54, points=1),
+
+            titleLayer('Vaade v_maletaht'),
+            getCheckColumnQuery('v_maletaht', 'id', points=1),
+            getCheckColumnQuery('v_maletaht', 'eesnimi', points=1),
+            getCheckColumnQuery('v_maletaht', 'perenimi', points=1),
+            getCheckColumnQuery('v_maletaht', 'isikukood', points=1),
+            getCheckColumnQuery('v_maletaht', 'klubis', points=1),
+            getCheckColumnQuery('v_maletaht', 'synniaeg', points=1),
+            getCheckColumnQuery('v_maletaht', 'sugu', points=1),
+            getCheckColumnQuery('v_maletaht', 'ranking', points=1),
+            getCheckDataQuery('v_maletaht', 'COUNT(*)', expectedValue=9, points=1),
+
+        ])
         print('Pole implementeeritud')
         continue
     else:

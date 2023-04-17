@@ -93,11 +93,15 @@ def getCheckDataQuery(tableName, columnName=None, expectedValue=None, where='', 
     }
 
 
-def getCheckColumnQuery(tableName, columnName, attributeName='*', expectedValue=None, shouldNotExist=False, points=0):
+def getCheckColumnQuery(tableName, columnName, attributeName='*', where=None, expectedValue=None, shouldNotExist=False, points=0):
     query = f"SELECT {attributeName} FROM information_schema.columns WHERE table_name = '{tableName}' AND column_name = '{columnName}'"
+
+    if where != '':
+        query += f" AND ({where})"
 
     return {
         'query': query,
+        'where': where,
         'tableName': tableName,
         'columnName': columnName,
         'attributeName': attributeName,
@@ -155,6 +159,13 @@ def getCheckViewExistsQuery(tableName, points=0):
         'query': query,
         'points': points,
         'funcName': 'checkViewExists',
+    }
+
+def getExecuteQuery(query, hasFeedback=False, points=0):
+    return {
+        'query': query,
+        'points': points,
+        'funcName': 'executeQuery',
     }
 
 
@@ -267,6 +278,15 @@ class Checker:
 
         return _responseWrapper(check(), params['points'], params)
 
+    def executeQuery(self, query):
+        try:
+            self.cur.execute(query)
+        except:
+            self.handleDBException(sys.exc_info())
+            return False
+
+        return {type: 'ignore',}
+
     def runTestQuery(self, test):
         # Should be more dynamic, but python does not have a good solution for calling class methods dynamically
         if test['funcName'] == 'checkColumn':
@@ -281,5 +301,7 @@ class Checker:
             return self.checkTableData(test)
         elif test['funcName'] == 'checkViewExists':
             return self.checkViewExists(test)
+        elif test['funcName'] == 'executeQuery':
+            return self.executeQuery(test)
         else:
             raise Exception('No such test found!')

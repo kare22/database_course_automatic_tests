@@ -76,7 +76,7 @@ def testStudent(testFileName, name, tests):
         with open(f"tulemused_{name}.csv", 'a', newline='', encoding='UTF8') as file:
             writer = csv.writer(file)
 
-            writer.writerow([getNameFromPath(testFileName)])
+            writer.writerow([getNameFromPath(testFileName), '', '', id])
             result = 0
             maxResult = 0
             index = 0
@@ -231,18 +231,18 @@ while True: #TODO Schema loading inside check
             getCheckDataQuery('v_partiid', 'COUNT(*)', expectedValue=299, points=1),
 
             titleLayer('Vaade v_partiidpisi'),
-            getCheckColumnQuery('v_partiidpidi', 'id', points=1),
-            getCheckColumnQuery('v_partiidpidi', 'valge_mangija', points=1),
-            getCheckColumnQuery('v_partiidpidi', 'valge_punkt', points=1),
-            getCheckColumnQuery('v_partiidpidi', 'must_mangija', points=1),
-            getCheckColumnQuery('v_partiidpidi', 'must_punkt', points=1),
-            getCheckDataQuery('v_partiidpidi', 'COUNT(*)', expectedValue=299, points=1),
-            getCheckDataQuery('valge_mangija', 'v_partiidpidi', where='id = 10', expectedValue='Anna Raha', points=1),
-            getCheckDataQuery('must_mangija', 'v_partiidpidi', where='id = 10', expectedValue='Aljona Aljas', points=1),
-            getCheckDataQuery('must_punkt', 'v_partiidpidi', where='id = 10', expectedValue=0, points=1),
-            getCheckDataQuery('v_partiidpidi', 'COUNT(*)', expectedValue=1, points=1),
+            getCheckColumnQuery('v_partiidpisi', 'id', points=1),
+            getCheckColumnQuery('v_partiidpisi', 'valge_mangija', points=1),
+            getCheckColumnQuery('v_partiidpisi', 'valge_punkt', points=1),
+            getCheckColumnQuery('v_partiidpisi', 'must_mangija', points=1),
+            getCheckColumnQuery('v_partiidpisi', 'must_punkt', points=1),
+            getCheckDataQuery('v_partiidpisi', 'COUNT(*)', expectedValue=299, points=1),
+            getCheckDataQuery('v_partiidpisi', 'valge_mangija', where='id = 10', expectedValue='Anna Raha', points=1),
+            getCheckDataQuery('v_partiidpisi', 'must_mangija', where='id = 10', expectedValue='Aljona Aljas', points=1),
+            getCheckDataQuery('v_partiidpisi', 'must_punkt', where='id = 10', expectedValue=0, points=1),
+            getCheckDataQuery('v_partiidpisi', 'COUNT(*)', expectedValue=1, points=1),
             getCheckColumnQuery('v_partiidpisi', 'must_punkt', 'data_type', 'numeric', points=1),
-            getCheckDataQuery('must_punkt', 'v_partiidpidi', where='id = 12', expectedValue=0.5, points=1),
+            getCheckDataQuery('v_partiidpisi', 'must_punkt', where='id = 12', expectedValue=0.5, points=1),
 
             titleLayer('Vaade v_punktid'),
             getCheckColumnQuery('v_punktid', 'partii', points=1),
@@ -259,12 +259,12 @@ while True: #TODO Schema loading inside check
             getCheckDataQuery('v_punktid', 'UPPER(varv)', where='partii = 299 AND mangija = 76', expectedValue='V', points=1),
             getCheckDataQuery('v_punktid', 'COUNT(*)', where='partii = 299 AND mangija = 85', expectedValue=1, points=1),
             getCheckDataQuery('v_punktid', 'UPPER(varv)', where='partii = 299 AND mangija = 85', expectedValue='M', points=1),
-            getCheckDataQuery('v_punktid', 'COUNT(*)', where='partii = 299 AND mangija = 76', expectedValue=1, points=1),
-            getCheckDataQuery('v_punktid', 'punkt', where='partii = 299 AND mangija = 76', expectedValue=0.5, points=1),
+            getCheckDataQuery('v_punktid', 'COUNT(*)', where='partii = 299 AND mangija = 76',  expectedValue=1, points=1),
+            getCheckDataQuery('v_punktid', 'punkt', where='partii = 299 AND mangija = 76', dataType='float', expectedValue=0.5, points=1),
             getCheckDataQuery('v_punktid', 'COUNT(*)', where='partii = 11 AND mangija = 91', expectedValue=1, points=1),
-            getCheckDataQuery('v_punktid', 'punkt', where='partii = 11 AND mangija = 91', expectedValue=0, points=1),
+            getCheckDataQuery('v_punktid', 'punkt', where='partii = 11 AND mangija = 91', dataType='float', expectedValue=0, points=1),
             getCheckDataQuery('v_punktid', 'COUNT(*)', where='partii = 1 AND mangija = 150', expectedValue=1, points=1),
-            getCheckDataQuery('v_punktid', 'punkt', where='partii = 1 AND mangija = 150', expectedValue=1, points=1),
+            getCheckDataQuery('v_punktid', 'punkt', where='partii = 1 AND mangija = 150', dataType='float', expectedValue=1, points=1),
 
             titleLayer('Vaade v_edetabelid'),
             getCheckColumnQuery('v_edetabelid', 'id', points=1),
@@ -277,7 +277,7 @@ while True: #TODO Schema loading inside check
             getCheckDataQuery('v_edetabelid', 'COUNT(*)', expectedValue=184, points=1),
 
             titleLayer('Vaade mv_edetabelid'),
-            getCheckDataQuery('pg_matviews', 'COUNT(*)', where="matviewname = 'mv_edetabelid'", expectedValue=1, points=1),
+            getCheckDataQuery('pg_matviews', 'COUNT(*)', where="matviewname = 'mv_edetabelid'", schema='', expectedValue=1, points=1),
             getExecuteQuery('REFRESH MATERIALIZED VIEW mv_edetabelid'),
             getCheckDataQuery('mv_edetabelid', 'COUNT(*)', expectedValue=184, points=1),
 
@@ -302,8 +302,6 @@ while True: #TODO Schema loading inside check
             getCheckDataQuery('v_maletaht', 'COUNT(*)', expectedValue=9, points=1),
 
         ])
-        print('Pole implementeeritud')
-        continue
     else:
         print('Ebalubatud sisend, palun proovi uuesti!')
         continue

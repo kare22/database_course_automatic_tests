@@ -3,34 +3,55 @@ import sys
 
 ### STATIC METHODS ###
 
+def _convertValue(value, dataType):
+    try:
+        if dataType == 'float':
+            return float(value)
+        elif dataType == 'int':
+            return int(value)
+    except:
+        return str(value)
+
 def _responseWrapper(result, points, attributes):
     response = ""
 
-    if 'tableName' in attributes and attributes['tableName'] is not None:
+    def has(param):
+        return param in attributes and attributes[param] is not None
+
+    hasExpectedValue = has('expectedValue')
+    hasColumnName = has('columnName')
+    hasConstraintName = has('constraintName')
+    hasTableName = has('tableName')
+    hasConstraintType = has('constraintType')
+    hasFuncName = has('functionName')
+    hasReceivedValue = has('receivedValue')
+    shouldNotExist = 'shouldNotExist' in attributes and attributes['shouldNotExist']
+
+    if hasTableName:
         response += f"Tabel {attributes['tableName']} "
-    if 'columnName' in attributes and attributes['columnName'] is not None:
+    if hasColumnName:
         response += f"Veerg {attributes['columnName']} "
     if 'where' in attributes and attributes['where'] is not None and attributes['where'] != '':
         response += f"WHERE {attributes['where']} "
-    if 'constraintName' in attributes and attributes['constraintName'] is not None:
+    if hasConstraintName:
         response += f"Kitsendus {attributes['constraintName']} "
-    if 'constraintType' in attributes and attributes['constraintType'] is not None:
+    if hasConstraintType:
         response += f"Kitsendustüüp {attributes['constraintType']} "
-    if 'funcName' in attributes and attributes['funcName'] == 'checkDefault':
+    if hasFuncName and attributes['funcName'] == 'checkDefault':
         response += 'Vaikevaartus '
 
-    if 'receivedValue' in attributes and attributes['receivedValue'] is not None:
+    if hasReceivedValue and hasExpectedValue:
         if result:
             response += f"Väärtus {attributes['receivedValue']} on olemas "
         else:
             response += f"Oodati väärtust {attributes['expectedValue']} kuid saadi {attributes['receivedValue']}"
 
-    if 'shouldNotExist' in attributes:
+    if shouldNotExist:
         if result:
             response += 'on eemaldatud'
         else:
             response += 'eeldati et ei ole kuid on olemas '
-    elif ('shouldExist' in attributes) and ('expectedValue' not in attributes or attributes['expectedValue'] is None):
+    elif ('shouldExist' in attributes) and not hasExpectedValue:
         if attributes['shouldExist'] == False:
             if result:
                 response += 'on eemaldatud'
@@ -66,13 +87,14 @@ def getCheckTableQuery(tableName, points=0):
     }
 
 
-def getCheckDataQuery(tableName, columnName=None, expectedValue=None, where='', runPreQuery=False, schema='public', points=0):
+def getCheckDataQuery(tableName, columnName=None, expectedValue=None, where='', runPreQuery=False, schema='public', dataType='str', points=0):
     preQuery = None
     #TODO is this necessary
     if runPreQuery:
         preQuery = f"SELECT table_name FROM information_schema.tables WHERE table_name='{tableName}'"
 
-    query = f"SELECT {'*' if columnName is None else columnName} FROM {schema}.{tableName}"
+    schemaString = f"{schema}." if schema != '' and schema != None else ''
+    query = f"SELECT {'*' if columnName is None else columnName} FROM {schemaString}{tableName}"
 
     if where != '':
         query += f" WHERE {where}"
@@ -90,13 +112,14 @@ def getCheckDataQuery(tableName, columnName=None, expectedValue=None, where='', 
         'expectedValue': expectedValue,
         'points': points,
         'funcName': 'checkTableData',
+        'dataType': dataType,
     }
 
 
-def getCheckColumnQuery(tableName, columnName, attributeName='*', where=None, expectedValue=None, shouldNotExist=False, points=0):
+def getCheckColumnQuery(tableName, columnName, attributeName='*', expectedValue=None, shouldNotExist=False, where=None, points=0):
     query = f"SELECT {attributeName} FROM information_schema.columns WHERE table_name = '{tableName}' AND column_name = '{columnName}'"
 
-    if where != '':
+    if where != '' and where != None:
         query += f" AND ({where})"
 
     return {
@@ -163,6 +186,7 @@ def getCheckViewExistsQuery(tableName, points=0):
 
 def getExecuteQuery(query, hasFeedback=False, points=0):
     return {
+        'type': 'ignore' if not hasFeedback else '',
         'query': query,
         'points': points,
         'funcName': 'executeQuery',
@@ -256,7 +280,7 @@ class Checker:
                     return len(self.cur.fetchall()) > 0, None
 
                 response = self.cur.fetchall()[0][0]
-                return (str(response)) == str(params['expectedValue']), response
+                return (_convertValue(response, params['dataType'])) == _convertValue(params['expectedValue'], params['dataType']), response
             except:
                 self.handleDBException(sys.exc_info())
                 return False, None
@@ -285,7 +309,7 @@ class Checker:
             self.handleDBException(sys.exc_info())
             return False
 
-        return {type: 'ignore',}
+        return None, None, None
 
     def runTestQuery(self, test):
         # Should be more dynamic, but python does not have a good solution for calling class methods dynamically

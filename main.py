@@ -58,7 +58,7 @@ def testStudent(testFileName, name, tests):
         cursor.close()
         connection.close()
     except:
-        True
+        print(sys.exc_info())
 
     connection = connect(id)
 

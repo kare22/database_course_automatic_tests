@@ -3,3 +3,8 @@ Before you can run the script you must first add the following folder, praks3 or
 Then add corresponding backup files there.
 
 Also <code>.env</code> must be set up with your local variables!
+
+docker build -t myapp .
+docker run -it myapp
+
+docker-compose up

@@ -1,13 +1,12 @@
 #!/bin/bash
-
-source .env
-
+echo $DB_HOST
+echo $DB_NAME
 # Go to desired directory
-cd $1
+cd "$1"
 
 # Cleanup
 rm -rf temp
-rm *.sql
+rm -f *.sql
 
 # Create temp folder
 mkdir temp
@@ -30,14 +29,14 @@ do
   BACKUP_FILE="../${file%.*}.sql"
 
   # Create new database
-  createdb -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -w $DB_NAME
+  createdb -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -w "$DB_NAME"
 
   # Restore data from psql dump
-  psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -w $DB_NAME < $PSQL_DUMP_FILE
+  psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -w "$DB_NAME" < "$PSQL_DUMP_FILE"
 
   # Create backup using inserts only
-  pg_dump -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -w --inserts $DB_NAME > $BACKUP_FILE
+  pg_dump -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -w --inserts "$DB_NAME" > "$BACKUP_FILE"
 
   # Delete the database
-  dropdb -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -w $DB_NAME
+  dropdb -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -w "$DB_NAME"
 done

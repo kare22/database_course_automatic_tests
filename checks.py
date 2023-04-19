@@ -215,6 +215,20 @@ def getCheckFunction(functionName, functionParams, expectedValue=None, where='',
         'funcName': 'checkFunction',
     }
 
+def getCheckProcedure(procedureName, procedureParams, preQuery=None, resultQuery=None, numberOfCols=None, points=0):
+    query = f"CALL {procedureName}({procedureParams})"
+
+    return {
+        'query': query,
+        'points': points,
+        'numberOfCols': numberOfCols,
+        'procedureName': procedureName,
+        'procedureParams': procedureParams,
+        'preQuery': preQuery,
+        'resultQuery': resultQuery,
+        'funcName': 'checkProcedure',
+    }
+
 
 class Checker:
 
@@ -238,7 +252,7 @@ class Checker:
                     return len(self.cur.fetchall()) > 0
             except:
                 self.handleDBException(sys.exc_info())
-                return False
+                return False, '', 0
 
         return _responseWrapper(check(), params['points'], params)
 
@@ -250,7 +264,7 @@ class Checker:
                 return len(self.cur.fetchall()) == 1
             except:
                 self.handleDBException(sys.exc_info())
-                return False
+                return False, '', 0
 
         return _responseWrapper(check(), params['points'], params)
 
@@ -268,7 +282,7 @@ class Checker:
                 return (str(response)) == str(params['expectedValue']), response
             except:
                 self.handleDBException(sys.exc_info())
-                return False, 'VIGA'
+                return False, '', 0
 
         result, receivedValue = check()
 
@@ -284,7 +298,7 @@ class Checker:
                 return len(self.cur.fetchall()) == 1
             except:
                 self.handleDBException(sys.exc_info())
-                return False
+                return False, '', 0
 
         return _responseWrapper(check(), params['points'], params)
 
@@ -297,7 +311,7 @@ class Checker:
                         return False, None
                 except:
                     self.handleDBException(sys.exc_info())
-                    return False, None
+                    return False, '', 0
             try:
                 self.cur.execute(params['query'])
 
@@ -308,7 +322,7 @@ class Checker:
                 return (_convertValue(response, params['dataType'])) == _convertValue(params['expectedValue'], params['dataType']), response
             except:
                 self.handleDBException(sys.exc_info())
-                return False, None
+                return False, '', 0
 
         result, receivedValue = check()
 
@@ -323,7 +337,7 @@ class Checker:
                 return len(self.cur.fetchall()) > 0, None
             except:
                 self.handleDBException(sys.exc_info())
-                return False
+                return False, '', 0
 
         return _responseWrapper(check(), params['points'], params)
 
@@ -332,7 +346,7 @@ class Checker:
             self.cur.execute(query)
         except:
             self.handleDBException(sys.exc_info())
-            return False
+            return False, '', 0
 
         return None, None, None
 
@@ -395,6 +409,41 @@ class Checker:
 
             return False, f"Viga funktsiooni {params['sqlFunctionName']} käivitamisel", 0
 
+    def checkProcedure(self, params):
+        try:
+            if params['numberOfCols'] is not None:
+                self.cur.execute(f"SELECT pronargs FROM pg_catalog.pg_proc WHERE proname = '{params['procedureName']}'")
+                if not self.cur.fetchall()[0][0] == params['numberOfCols']:
+                    return False, f"Protseduuri {params['procedureName']} parameetrite arv on vale või protseduuri ei letiud", 0
+        except:
+            self.handleDBException(sys.exc_info())
+
+        try:
+            if params['preQuery'] != '' and params['preQuery'] is not None:
+                self.cur.execute(params['preQuery'])
+        except:
+            self.handleDBException(sys.exc_info())
+
+        try:
+            self.cur.execute(params['query'])
+        except:
+            self.handleDBException(sys.exc_info())
+            return False, 'Viga protseduuri käivitamisel', 0
+
+        try:
+            self.cur.execute(params['resultQuery'])
+
+            response = self.cur.fetchall()
+            print(response)
+            if not len(response) > 0:
+                return True, 'ok', params['points']
+
+            return False, 'Viga, protseduuri tulemus ei ole vastav', 0
+        except:
+            self.handleDBException(sys.exc_info())
+
+        return False, 'Viga', 0
+
     def runTestQuery(self, test):
         # Should be more dynamic, but python does not have a good solution for calling class methods dynamically
         if test['funcName'] == 'checkColumn':
@@ -413,5 +462,7 @@ class Checker:
             return self.executeQuery(test)
         elif test['funcName'] == 'checkFunction':
             return self.checkFunction(test)
+        elif test['funcName'] == 'checkProcedure':
+            return self.checkProcedure(test)
         else:
             raise Exception('No such test found!')

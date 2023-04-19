@@ -252,7 +252,7 @@ class Checker:
                     return len(self.cur.fetchall()) > 0
             except:
                 self.handleDBException(sys.exc_info())
-                return False, '', 0
+                return False, None
 
         return _responseWrapper(check(), params['points'], params)
 
@@ -264,7 +264,7 @@ class Checker:
                 return len(self.cur.fetchall()) == 1
             except:
                 self.handleDBException(sys.exc_info())
-                return False, '', 0
+                return False, None
 
         return _responseWrapper(check(), params['points'], params)
 
@@ -282,7 +282,7 @@ class Checker:
                 return (str(response)) == str(params['expectedValue']), response
             except:
                 self.handleDBException(sys.exc_info())
-                return False, '', 0
+                return False, None
 
         result, receivedValue = check()
 
@@ -298,7 +298,7 @@ class Checker:
                 return len(self.cur.fetchall()) == 1
             except:
                 self.handleDBException(sys.exc_info())
-                return False, '', 0
+                return False, None
 
         return _responseWrapper(check(), params['points'], params)
 
@@ -322,7 +322,7 @@ class Checker:
                 return (_convertValue(response, params['dataType'])) == _convertValue(params['expectedValue'], params['dataType']), response
             except:
                 self.handleDBException(sys.exc_info())
-                return False, '', 0
+                return False, None
 
         result, receivedValue = check()
 
@@ -337,7 +337,7 @@ class Checker:
                 return len(self.cur.fetchall()) > 0, None
             except:
                 self.handleDBException(sys.exc_info())
-                return False, '', 0
+                return False, None
 
         return _responseWrapper(check(), params['points'], params)
 

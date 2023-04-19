@@ -3,7 +3,10 @@ import sys
 
 ### STATIC METHODS ###
 
-def _convertValue(value, dataType):
+def titleLayer(text):
+    return {'type': 'title', 'text': text,}
+
+def _convertValue(value, dataType=None):
     try:
         if dataType == 'float':
             return float(value)
@@ -11,6 +14,8 @@ def _convertValue(value, dataType):
             return int(value)
     except:
         return str(value)
+
+    return str(value)
 
 def _responseWrapper(result, points, attributes):
     response = ""
@@ -192,12 +197,32 @@ def getExecuteQuery(query, hasFeedback=False, points=0):
         'funcName': 'executeQuery',
     }
 
+def getCheckFunction(functionName, functionParams, expectedValue=None, where='', checkCount=None, dataType='str', points=0):
+    query = f"SELECT * FROM {functionName}({functionParams})"
+
+    if where != '':
+        query += f" WHERE {where}"
+
+    return {
+        'query': query,
+        'where': where,
+        'points': points,
+        'expectedValue': expectedValue,
+        'dataType': dataType,
+        'sqlFunctionName': functionName,
+        'sqlFunctionParams': functionParams,
+        'checkCount': checkCount,
+        'funcName': 'checkFunction',
+    }
+
 
 class Checker:
 
     def __init__(self, schema, cur):
         self.schema = schema
         self.cur = cur
+
+        self.cur.execute(f"SET search_path TO public")
 
     def handleDBException(self, error):
         print(error)
@@ -311,6 +336,65 @@ class Checker:
 
         return None, None, None
 
+    def checkFunction(self, params):
+        #TODO better response text
+
+        # Check that function name exists
+        try:
+            self.cur.execute(f"SELECT * FROM pg_catalog.pg_proc WHERE proname='{params['sqlFunctionName']}'")
+
+            if not len(self.cur.fetchall()) > 0:
+                return False, f"Funktsiooni nimega {params['sqlFunctionName']} ei leitud", 0
+        except:
+            self.handleDBException(sys.exc_info())
+            return False, None, None
+
+        # Check that type is correct
+        try:
+            self.cur.execute(f"SELECT routine_name FROM information_schema.routines WHERE routine_type = 'FUNCTION' AND routine_name='{params['sqlFunctionName']}'")
+
+            if not len(self.cur.fetchall()) > 0:
+                return False, f"Funktsiooni nimega {params['sqlFunctionName']} ei ole tüüpi funktsioon", 0
+        except:
+            self.handleDBException(sys.exc_info())
+            return False, None, None
+
+        try:
+            self.cur.execute(params['query'])
+
+            if params['expectedValue'] is None:
+                response = self.cur.fetchall()
+
+                if params['checkCount'] is not None:
+                    result = len(response) == params['checkCount']
+                else:
+                    result = len(response) > 0
+            else:
+                response = self.cur.fetchall()[0][0]
+                result = _convertValue(response, params['dataType']) == _convertValue(params['expectedValue'], params['dataType'])
+
+            # return _responseWrapper(result, params['points'], params)
+            #TODO improve if-else
+            feedback = f"Funktsiooni{' päringu tulemus' if params['expectedValue'] is None else ''} {params['sqlFunctionName']}({params['sqlFunctionParams']}){' WHERE ' + params['where'] + '' if params['where'] != '' else ''} "
+            if params['checkCount'] is not None:
+                feedback += f"oodati {params['checkCount']} olemit, saadi {len(response)}"
+            elif params['expectedValue'] is None:
+                feedback += 'on olemas' if result else 'ei ole olemas'
+            else:
+                feedback += f"tulemuseks {'saadi' if result else 'ei saadud'} {_convertValue(params['expectedValue'], params['dataType'])}"
+
+                if not result:
+                    feedback += f" tagastati {_convertValue(response, params['dataType'])}"
+
+            return result, feedback, params['points'] if result else 0
+        except:
+            self.handleDBException(sys.exc_info())
+
+            if params['where'] != '' and params['where'] is not None:
+                return False, f"{params['sqlFunctionName']}({params['sqlFunctionParams']}){' WHERE ' + params['where'] + '' if params['where'] != '' else ''} ei saanud käivitada", 0
+
+            return False, f"Viga funktsiooni {params['sqlFunctionName']} käivitamisel", 0
+
     def runTestQuery(self, test):
         # Should be more dynamic, but python does not have a good solution for calling class methods dynamically
         if test['funcName'] == 'checkColumn':
@@ -327,5 +411,7 @@ class Checker:
             return self.checkViewExists(test)
         elif test['funcName'] == 'executeQuery':
             return self.executeQuery(test)
+        elif test['funcName'] == 'checkFunction':
+            return self.checkFunction(test)
         else:
             raise Exception('No such test found!')

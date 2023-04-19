@@ -7,11 +7,14 @@ from uuid import uuid4
 from datetime import datetime
 from dotenv import load_dotenv
 
+import tests.kodu5
+
 from checks import *
 
 # Load environment variables from .env file
 load_dotenv()
 
+#TODO move all imports to checks.py
 def titleLayer(text):
     return {'type': 'title', 'text': text,}
 
@@ -209,8 +212,9 @@ while True: #TODO Schema loading inside check
             getCheckDataQuery('mv_partiide_arv_valgetega', 'MAX(partiisid_valgetega)', expectedValue=14, points=1),
         ])
     elif answer == 'k5':
-        print('Pole implementeeritud')
-        continue
+        name = 'kodu5'
+        # subprocess.call(['sh', './convert.sh', name])
+        run(name, name, tests.kodu5.tests())
     elif answer == 'k6':
         print('Pole implementeeritud')
         continue

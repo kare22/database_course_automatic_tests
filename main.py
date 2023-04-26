@@ -7,9 +7,11 @@ from uuid import uuid4
 from datetime import datetime
 from dotenv import load_dotenv
 
+#TODO imporve these imports
 import tests.praks3
 import tests.praks4
 import tests.praks7
+import tests.praks10
 import tests.kodu4
 import tests.kodu5
 import tests.kodu6
@@ -89,14 +91,17 @@ def testStudent(testFileName, name, tests):
             maxResult = 0
             index = 0
             for i, test in enumerate(tests):
-                if test.get('type', '') == 'ignore':
-                    continue
-                elif test.get('type', '') == 'title':
+
+                if test.get('type', '') == 'title':
                     writer.writerow(['', '', '', test['text'], '',])
                     continue
                 index += 1
 
                 testResult = checker.runTestQuery(test)
+
+                if test.get('type', '') == 'ignore':
+                    continue
+
                 maxResult += test.get('points', 0)
 
                 #TODO add color to ÕIGE-VALE
@@ -136,6 +141,7 @@ while True: #TODO Schema loading inside check
     print('k4 --> Kodu4')
     print('k5 --> Kodu5')
     print('p7 --> Praks7')
+    print('p10 --> Praks10')
     print('k6 --> Kodu6')
 
     answer = input('Millist praksi soovid jooksutada?: ')
@@ -155,15 +161,17 @@ while True: #TODO Schema loading inside check
         subprocess.call(['sh', './convert.sh', name])
         run(name, name, tests.kodu5.tests())
     elif answer == 'k6':
-        # name = 'kodu6'
+        name = 'kodu6'
         # subprocess.call(['sh', './convert.sh', name])
-        # run(name, name, tests.kodu6.tests())
-        print('Pole implementeeritud')
-        continue
+        run(name, name, tests.kodu6.tests())
     elif answer == 'p7':
         name = 'praks7'
         subprocess.call(['sh', './convert.sh', name])
         run(name, name, tests.praks7.tests())
+    elif answer == 'p10':
+        name = 'praks10'
+        subprocess.call(['sh', './convert.sh', name])
+        run(name, name, tests.praks10.tests())
     else:
         print('Ebalubatud sisend, palun proovi uuesti!')
         continue

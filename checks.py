@@ -18,6 +18,11 @@ def _convertValue(value, dataType=None):
     return str(value)
 
 def _responseWrapper(result, points, attributes):
+    if result == True and attributes['customSuccess'] != '':
+        return result, attributes['customSuccess'], points
+    if result == False and attributes['customFailure'] != '':
+        return result, attributes['customFailure'], points
+
     response = ""
 
     def has(param):
@@ -92,7 +97,7 @@ def getCheckTableQuery(tableName, points=0):
     }
 
 
-def getCheckDataQuery(tableName, columnName=None, expectedValue=None, where='', runPreQuery=False, schema='public', dataType='str', points=0):
+def getCheckDataQuery(tableName, columnName=None, expectedValue=None, where='', join='', runPreQuery=False, schema='public', dataType='str', points=0, customSuccess='', customFailure=''):
     preQuery = None
     #TODO is this necessary
     if runPreQuery:
@@ -100,6 +105,9 @@ def getCheckDataQuery(tableName, columnName=None, expectedValue=None, where='', 
 
     schemaString = f"{schema}." if schema != '' and schema != None else ''
     query = f"SELECT {'*' if columnName is None else columnName} FROM {schemaString}{tableName}"
+
+    if join != '':
+        query += f" JOIN {join}"
 
     if where != '':
         query += f" WHERE {where}"
@@ -116,6 +124,8 @@ def getCheckDataQuery(tableName, columnName=None, expectedValue=None, where='', 
         'columnName': columnName,
         'expectedValue': expectedValue,
         'points': points,
+        'customSuccess': customSuccess,
+        'customFailure': customFailure,
         'funcName': 'checkTableData',
         'dataType': dataType,
     }
@@ -197,8 +207,11 @@ def getExecuteQuery(query, hasFeedback=False, points=0):
         'funcName': 'executeQuery',
     }
 
-def getCheckFunction(functionName, functionParams, expectedValue=None, where='', checkCount=None, dataType='str', points=0):
-    query = f"SELECT * FROM {functionName}({functionParams})"
+def getCheckFunction(functionName, functionParams, attributeName='*', expectedValue=None, where='', checkCount=None, dataType='str', numberOfParameters=None, points=0):
+    if expectedValue is not None and checkCount is not None:
+        raise Exception('getCheckFunction: expectedValue and checkCount can\'t both be filled')
+
+    query = f"SELECT {attributeName} FROM {functionName}({functionParams})"
 
     if where != '':
         query += f" WHERE {where}"
@@ -212,6 +225,7 @@ def getCheckFunction(functionName, functionParams, expectedValue=None, where='',
         'sqlFunctionName': functionName,
         'sqlFunctionParams': functionParams,
         'checkCount': checkCount,
+        'numberOfParameters': numberOfParameters,
         'funcName': 'checkFunction',
     }
 
@@ -229,6 +243,25 @@ def getCheckProcedure(procedureName, procedureParams, preQuery=None, resultQuery
         'funcName': 'checkProcedure',
     }
 
+def getCheckIndex(indexName, points=0):
+    query = f"SELECT * FROM pg_indexes WHERE indexname = '{indexName}'"
+
+    return {
+        'query': query,
+        'indexName': indexName,
+        'points': points,
+        'funcName': 'checkIndex',
+    }
+
+def getCheckTrigger(name, eventManipulations=[], actionTiming='BEFORE', points=0):
+    return {
+        'name': name,
+        'points': points,
+        'eventManipulations': eventManipulations,
+        'actionTiming': actionTiming,
+        'funcName': 'checkTrigger',
+    }
+
 
 class Checker:
 
@@ -239,7 +272,7 @@ class Checker:
         self.cur.execute(f"SET search_path TO public")
 
     def handleDBException(self, error):
-        print(error)
+        # print(error) TODO put back
         self.cur.execute("ROLLBACK")
 
     def checkConstraint(self, params):
@@ -315,6 +348,10 @@ class Checker:
             try:
                 self.cur.execute(params['query'])
 
+                if params['expectedValue'] == 'NULL':
+                    response = self.cur.fetchall()
+                    return len(response) == 0 or response[0][0] == None, None
+
                 if params['expectedValue'] is None:
                     return len(self.cur.fetchall()) > 0, None
 
@@ -341,9 +378,10 @@ class Checker:
 
         return _responseWrapper(check(), params['points'], params)
 
-    def executeQuery(self, query):
+    def executeQuery(self, params):
         try:
-            self.cur.execute(query)
+            # print(params['query'])
+            self.cur.execute(params['query'])
         except:
             self.handleDBException(sys.exc_info())
             return False, '', 0
@@ -359,6 +397,18 @@ class Checker:
 
             if not len(self.cur.fetchall()) > 0:
                 return False, f"Funktsiooni nimega {params['sqlFunctionName']} ei leitud", 0
+        except:
+            self.handleDBException(sys.exc_info())
+            return False, None, None
+
+        # Check that function number of arguments is correct
+        try:
+            if params['numberOfParameters'] != None and params['numberOfParameters'] != '':
+                self.cur.execute(f"SELECT pronargs FROM pg_catalog.pg_proc WHERE proname='{params['sqlFunctionName']}'")
+
+                result = self.cur.fetchall()[0][0]
+                if not result == params['numberOfParameters']:
+                    return False, f"Funktsiooni nimega {params['sqlFunctionName']} parameetrite arv saadi {result} aga eeldati {params['numberOfParameters']}", 0
         except:
             self.handleDBException(sys.exc_info())
             return False, None, None
@@ -434,7 +484,7 @@ class Checker:
             self.cur.execute(params['resultQuery'])
 
             response = self.cur.fetchall()
-            print(response)
+            # print(response)
             if not len(response) > 0:
                 return True, 'ok', params['points']
 
@@ -443,6 +493,39 @@ class Checker:
             self.handleDBException(sys.exc_info())
 
         return False, 'Viga', 0
+
+    def checkIndex(self, params):
+        try:
+            self.cur.execute(params['query'])
+
+            if len(self.cur.fetchall()) > 0:
+                return True, f"Index {params['indexName']} on olemas", params['points']
+        except:
+            self.handleDBException(sys.exc_info())
+            return False, f"Viga indexi {params['indexName']} käivitamisel", 0
+
+        return False, f"Indexit {params['indexName']} ei leitud", 0
+
+    def checkTrigger(self, params):
+        self.cur.execute(f"SELECT trigger_name FROM information_schema.triggers WHERE trigger_name = '{params['name']}'")
+        if len(self.cur.fetchall()) < 0:
+            return False, f"Triggerit {params['name']} ei leitud", 0
+
+        errors = []
+        if len(params['eventManipulations']) > 0:
+            for manipulation in params['eventManipulations']:
+                self.cur.execute(f"SELECT trigger_name FROM information_schema.triggers WHERE trigger_name = '{params['name']}' AND event_manipulation = '{manipulation}'")
+                if len(self.cur.fetchall()) < 0:
+                    errors.append(manipulation)
+
+        self.cur.execute(f"SELECT trigger_name FROM information_schema.triggers WHERE trigger_name = '{params['name']}' AND action_timing = '{params['actionTiming']}'")
+        if len(self.cur.fetchall()) < 0:
+            errors.append(params['actionTiming'])
+
+        points = ((len(params['eventManipulations']) + 1 - len(errors)) / (len(params['eventManipulations']) + 1)) * params['points']
+
+        return params['points'] == 0 or points > 0, f"Triggeriga {params['name']} on kõik korras!" if len(errors) == 0 else f"Triggeril {params['name']} on puudu {', '.join(errors)}", points
+
 
     def runTestQuery(self, test):
         # Should be more dynamic, but python does not have a good solution for calling class methods dynamically
@@ -464,5 +547,9 @@ class Checker:
             return self.checkFunction(test)
         elif test['funcName'] == 'checkProcedure':
             return self.checkProcedure(test)
+        elif test['funcName'] == 'checkIndex':
+            return self.checkIndex(test)
+        elif test['funcName'] == 'checkTrigger':
+            return self.checkTrigger(test)
         else:
             raise Exception('No such test found!')

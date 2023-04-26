@@ -73,6 +73,7 @@ def testStudent(testFileName, name, tests):
     connection = connect(id)
 
     # Migrate created database with data (to be tested)
+    print('schema ' + os.getenv('DB_SCHEMA'))
     with open(testFileName, 'r') as f:
         with connection.cursor() as cur:
             cur.execute(f.read().replace('public', os.getenv('DB_SCHEMA')).replace('OWNER TO postgres', f"OWNER TO {os.getenv('DB_USER')}"))
@@ -90,6 +91,8 @@ def testStudent(testFileName, name, tests):
             result = 0
             maxResult = 0
             index = 0
+
+            print(getNameFromPath(testFileName))
             for i, test in enumerate(tests):
 
                 if test.get('type', '') == 'title':
@@ -98,6 +101,7 @@ def testStudent(testFileName, name, tests):
                 index += 1
 
                 testResult = checker.runTestQuery(test)
+                connection.commit()
 
                 if test.get('type', '') == 'ignore':
                     continue

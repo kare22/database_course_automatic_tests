@@ -272,7 +272,7 @@ class Checker:
         self.cur.execute(f"SET search_path TO public")
 
     def handleDBException(self, error):
-        # print(error) TODO put back
+        print(error) #TODO put back
         self.cur.execute("ROLLBACK")
 
     def checkConstraint(self, params):
@@ -353,7 +353,10 @@ class Checker:
                     return len(response) == 0 or response[0][0] == None, None
 
                 if params['expectedValue'] is None:
-                    return len(self.cur.fetchall()) > 0, None
+                    response = self.cur.fetchall()
+                    # print(params['query'])
+                    # print(response)
+                    return len(response) > 0, None
 
                 response = self.cur.fetchall()[0][0]
                 return (_convertValue(response, params['dataType'])) == _convertValue(params['expectedValue'], params['dataType']), response

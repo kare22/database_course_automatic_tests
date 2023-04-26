@@ -16,10 +16,16 @@ def tests():
 
         getCheckTrigger('tg_partiiaeg', ['UPDATE', 'INSERT'], 'BEFORE', 0.5),
 
-        getExecuteQuery(f"INSERT INTO public.isikud (id, eesnimi, perenimi) VALUES ({user1},'Man', 'Ka')",),
-        getExecuteQuery(f"INSERT INTO public.isikud (id, eesnimi, perenimi) VALUES ({user2},'Kan', 'Ma')",),
-        getExecuteQuery(f"INSERT INTO public.partiid VALUES (44,'2023-04-22 17:45:24.000','2023-03-22 17:45:24.000',{user1},{user2},2,0, {partiiId})",),
+        getExecuteQuery("ALTER TABLE public.partiid DISABLE TRIGGER ALL"),
+        getExecuteQuery("ALTER TABLE public.partiid ENABLE TRIGGER tg_partiiaeg"),
+        getExecuteQuery("ALTER TABLE public.isikud DISABLE TRIGGER ALL"),
+        getExecuteQuery("ALTER TABLE public.isikud ENABLE TRIGGER tg_klubi_olemasolu"),
 
+        getExecuteQuery(f"INSERT INTO public.isikud (id, eesnimi, perenimi) VALUES ({user1},'Man', 'Ka')", hasFeedback=False,),
+        getExecuteQuery(f"INSERT INTO public.isikud (id, eesnimi, perenimi) VALUES ({user2},'Kan', 'Ma')", hasFeedback=False,),
+        getExecuteQuery(f"INSERT INTO public.partiid VALUES (44,'2023-04-22 17:45:24.000','2023-03-22 17:45:24.000',{user1},{user2},2,0, {partiiId})",),
+        getCheckDataQuery('isikud', '*', where=f"public.isikud.id = {user1}", ),
+        getCheckDataQuery('isikud', '*', where=f"public.isikud.id = {user2}", ),
         getCheckDataQuery(
             'partiid',
             'lopphetk',
@@ -34,8 +40,8 @@ def tests():
         getCheckDataQuery(
             'isikud',
             '*',
-            join=f"klubid ON klubid.id=isikud.klubis",
-            where=f"isikud.id = {user1} AND klubid.nimi LIKE '%ubitu%'",
+            join=f"public.klubid ON public.klubid.id=isikud.klubis",
+            where=f"public.isikud.id = {user1} AND public.klubid.nimi LIKE '%ubitu%'",
             points=0.25,
             customSuccess='Klupita isikule lisati õige klubi id',
             customFailure='Klupita isikule ei lisatud õiget klubi id',

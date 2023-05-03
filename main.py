@@ -12,6 +12,7 @@ import tests.praks3
 import tests.praks4
 import tests.praks7
 import tests.praks10
+import tests.praks11
 import tests.kodu4
 import tests.kodu5
 import tests.kodu6
@@ -140,6 +141,7 @@ def run(name, path, tests):
                 testStudent(f"{directory}/{path}/{filename}", name, tests)
 
 while True: #TODO Schema loading inside check
+    print('kk --> KÕIK')
     print('p3 --> Praks3')
     print('p4 --> Praks4/Kodu3')
     print('k4 --> Kodu4')
@@ -150,6 +152,19 @@ while True: #TODO Schema loading inside check
 
     answer = input('Millist praksi soovid jooksutada?: ')
 
+    if answer == 'kk':
+        name = 'koik'
+        subprocess.call(['sh', './convert.sh', name])
+        tasks = []
+        tasks.append(tests.praks3.tests())
+        tasks.append(tests.praks4.tests())
+        tasks.append(tests.kodu4.tests())
+        tasks.append(tests.kodu5.tests())
+        tasks.append(tests.kodu6.tests())
+        tasks.append(tests.praks7.tests())
+        tasks.append(tests.praks10.tests())
+        # tasks.append(tests.praks11.tests())
+        run(name, name, tasks)
     if answer == 'p3':
         subprocess.call(['sh', './convert.sh', 'praks3'])
         run('praks3', 'praks3', tests.praks3.tests())
@@ -176,6 +191,10 @@ while True: #TODO Schema loading inside check
         name = 'praks10'
         subprocess.call(['sh', './convert.sh', name])
         run(name, name, tests.praks10.tests())
+    elif answer == 'p11':
+        name = 'praks11'
+        subprocess.call(['sh', './convert.sh', name])
+        run(name, name, tests.praks11.tests())
     else:
         print('Ebalubatud sisend, palun proovi uuesti!')
         continue

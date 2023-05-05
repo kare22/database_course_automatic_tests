@@ -149,6 +149,7 @@ while True: #TODO Schema loading inside check
     print('p7 --> Praks7')
     print('p10 --> Praks10')
     print('k6 --> Kodu6')
+    print('p11 --> Praks11')
 
     answer = input('Millist praksi soovid jooksutada?: ')
 

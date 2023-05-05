@@ -350,6 +350,8 @@ class Checker:
 
                 if params['expectedValue'] == 'NULL':
                     response = self.cur.fetchall()
+                    # print(params['query'])
+                    # print(response)
                     return len(response) == 0 or response[0][0] == None, None
 
                 if params['expectedValue'] is None:
@@ -511,7 +513,9 @@ class Checker:
 
     def checkTrigger(self, params):
         self.cur.execute(f"SELECT trigger_name FROM information_schema.triggers WHERE trigger_name = '{params['name']}'")
-        if len(self.cur.fetchall()) < 0:
+        response = self.cur.fetchall()
+        # print(response)
+        if len(response) <= 0:
             return False, f"Triggerit {params['name']} ei leitud", 0
 
         errors = []
